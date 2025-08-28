@@ -8,10 +8,10 @@
   body { font-family: Arial, sans-serif; margin:0; padding:0; }
   header { background:#111; color:#fff; padding:10px; text-align:center; }
   main { margin:20px auto; max-width:1200px; }
-  input[type="text"] { width:60%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:16px; }
+  input[type="text"] { width:50%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:16px; }
   button { padding:8px 14px; margin-left:5px; border-radius:6px; border:none; background:#4285F4; color:white; cursor:pointer; }
   button:hover { background:#3367D6; }
-  #tabs { display:flex; margin-top:20px; border-bottom:2px solid #ccc; }
+  #tabs { display:flex; margin-top:20px; border-bottom:2px solid #ccc; flex-wrap: wrap; }
   .tab { padding:8px 12px; cursor:pointer; margin-right:4px; background:#eee; border-radius:6px 6px 0 0; display:flex; align-items:center; font-weight:bold; }
   .tab.active { background:#fff; border-bottom:2px solid #4285F4; }
   .tab-close { margin-left:6px; color:red; font-weight:bold; cursor:pointer; }
@@ -27,6 +27,7 @@
 <main>
   <input type="text" id="urlInput" placeholder="Enter website URL">
   <button onclick="openInTab()">Open in Tab</button>
+  <button onclick="openInNewTab()">Open in New Tab</button>
 
   <div id="tabs"></div>
   <div id="browserContainer">Your site will appear here.</div>
@@ -36,6 +37,7 @@
 const tabs = [];
 let activeTabIndex = -1;
 
+// Create an iframe using AllOrigins proxy to bypass CORS
 function createIframe(url) {
   const iframe = document.createElement('iframe');
   iframe.src = 'https://allorigins.win/raw?url=' + encodeURIComponent(url);
@@ -45,18 +47,19 @@ function createIframe(url) {
   return iframe;
 }
 
+// Render the tabs bar
 function renderTabs() {
   const tabsDiv = document.getElementById('tabs');
   tabsDiv.innerHTML = '';
   tabs.forEach((tab,index)=>{
     const tabEl = document.createElement('div');
-    tabEl.className = 'tab' + (index === activeTabIndex ? ' active':'');
+    tabEl.className = 'tab' + (index===activeTabIndex?' active':'');
     tabEl.textContent = tab.url;
 
-    tabEl.onclick = () => { activeTabIndex=index; renderTabs(); renderActiveTab(); };
+    tabEl.onclick = ()=> { activeTabIndex=index; renderTabs(); renderActiveTab(); };
 
     const closeBtn = document.createElement('span');
-    closeBtn.className = 'tab-close';
+    closeBtn.className='tab-close';
     closeBtn.textContent='×';
     closeBtn.onclick = (e)=>{
       e.stopPropagation();
@@ -71,6 +74,7 @@ function renderTabs() {
   });
 }
 
+// Render the active tab's iframe
 function renderActiveTab() {
   const container = document.getElementById('browserContainer');
   container.innerHTML='';
@@ -81,19 +85,33 @@ function renderActiveTab() {
   container.appendChild(tabs[activeTabIndex].iframe);
 }
 
+// Open a website in a new in-page tab
 function openInTab() {
   let url = document.getElementById('urlInput').value.trim();
   if(!url) return alert('Please enter a URL.');
   if(!/^https?:\/\//i.test(url)) url='https://'+url;
 
-  const iframe=createIframe(url);
+  const iframe = createIframe(url);
   tabs.push({url,iframe});
   activeTabIndex=tabs.length-1;
   renderTabs();
   renderActiveTab();
 }
 
-// Trigger on Enter key
+// Open a website in about:blank
+function openInNewTab() {
+  let url = document.getElementById('urlInput').value.trim();
+  if(!url) return alert('Please enter a URL.');
+  if(!/^https?:\/\//i.test(url)) url='https://'+url;
+
+  const newWindow = window.open('', '_blank');
+  if(!newWindow) return alert("Popup blocked. Allow popups for this site.");
+
+  const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+  newWindow.location.href = proxyUrl;
+}
+
+// Trigger enter key
 document.getElementById('urlInput').addEventListener('keypress',function(e){
   if(e.key==='Enter') openInTab();
 });
