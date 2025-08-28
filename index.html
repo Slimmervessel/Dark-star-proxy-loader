@@ -1,97 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dark Star Browser</title>
-  <style>
-    body { margin:0; padding:0; font-family: Arial, sans-serif; background:#0d0d0d; color:#fff; }
-    header { background:#111; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap;}
-    h1 { margin:0; font-size:18px; flex: 1 0 100%; margin-bottom: 10px; }
-    #urlInput { width:60%; padding:6px 10px; border-radius:6px; border:none; font-size:16px; }
-    button { padding:6px 12px; margin-left:5px; border-radius:6px; border:none; background:#4285F4; color:white; cursor:pointer; }
-    button:hover { background:#3367D6; }
-    #shortcutBar { display:flex; justify-content:center; flex-wrap:wrap; margin-top:20px; gap:10px; }
-    .shortcut { display:flex; align-items:center; justify-content:center; width:120px; height:50px; background:#222; border-radius:10px; cursor:pointer; font-weight:bold; color:#fff; }
-    .shortcut:hover { background:#444; }
-    #tabs { display:flex; margin-top:20px; border-bottom:2px solid #ccc; flex-wrap: wrap; }
-    .tab { padding:8px 12px; cursor:pointer; margin-right:4px; background:#333; border-radius:6px 6px 0 0; display:flex; align-items:center; font-weight:bold; }
-    .tab.active { background:#fff; color:#000; border-bottom:2px solid #4285F4; }
-    .tab-close { margin-left:6px; color:red; font-weight:bold; cursor:pointer; }
-    #browserContainer { border:2px solid #ccc; height:600px; margin-top:0; border-radius:0 6px 6px 6px; background:#fff; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Star Browser</title>
+<style>
+  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#0d0d0d; color:#fff; }
+  header { background:#111; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; }
+  header h1 { margin:0; font-size:18px; }
+  #searchBar { width:60%; padding:6px 10px; border-radius:6px; border:none; font-size:16px; }
+  button { padding:6px 12px; margin-left:5px; border-radius:6px; border:none; background:#4285F4; color:white; cursor:pointer; }
+  button:hover { background:#3367D6; }
+  #shortcutBar { display:flex; justify-content:center; flex-wrap:wrap; margin-top:20px; gap:10px; }
+  .shortcut { display:flex; align-items:center; justify-content:center; width:120px; height:50px; background:#222; border-radius:10px; cursor:pointer; font-weight:bold; color:#fff; }
+  .shortcut:hover { background:#444; }
+  #tabs { display:flex; margin-top:20px; border-bottom:2px solid #ccc; flex-wrap: wrap; }
+  .tab { padding:8px 12px; cursor:pointer; margin-right:4px; background:#333; border-radius:6px 6px 0 0; display:flex; align-items:center; font-weight:bold; }
+  .tab.active { background:#fff; color:#000; border-bottom:2px solid #4285F4; }
+  .tab-close { margin-left:6px; color:red; font-weight:bold; cursor:pointer; }
+  #browserContainer { border:2px solid #ccc; height:600px; margin-top:0; border-radius:0 6px 6px 6px; background:#fff; }
+</style>
 </head>
 <body>
-  <header>
-    <h1>DARK STAR BROWSER</h1>
-    <input type="text" id="urlInput" placeholder="Enter website URL"/>
-    <button onclick="openInPage()">Open in Page</button>
-    <button onclick="openInNewTab()">Open in New Tab</button>
-  </header>
-  <div id="shortcutBar">
-    <div class="shortcut" onclick="loadURL('https://example.com')">Example</div>
-    <div class="shortcut" onclick="loadURL('https://en.wikipedia.org')">Wikipedia</div>
-    <div class="shortcut" onclick="loadURL('https://developer.mozilla.org')">MDN</div>
-    <div class="shortcut" onclick="loadURL('https://w3schools.com')">W3Schools</div>
-  </div>
-  <div id="tabs"></div>
-  <div id="browserContainer">Your site will appear here.</div>
-  <script>
-    const tabs = [], createIframe = url => {
-      const iframe = document.createElement('iframe');
-      iframe.src = url;
-      iframe.style.width = iframe.style.height = '100%';
-      iframe.style.border = '0';
-      return iframe;
+
+<header>
+  <h1>DARK STAR BROWSER</h1>
+  <input type="text" id="urlInput" placeholder="Enter website URL">
+  <button onclick="openInPage()">Open in Page</button>
+  <button onclick="openInNewTab()">Open in New Tab</button>
+</header>
+
+<div id="shortcutBar">
+  <div class="shortcut" onclick="loadURL('https://www.google.com')">Google</div>
+  <div class="shortcut" onclick="loadURL('https://www.youtube.com')">YouTube</div>
+  <div class="shortcut" onclick="loadURL('https://www.spotify.com')">Spotify</div>
+  <div class="shortcut" onclick="loadURL('https://discord.com')">Discord</div>
+  <div class="shortcut" onclick="loadURL('https://chat.openai.com')">ChatGPT</div>
+  <div class="shortcut" onclick="loadURL('https://github.com')">GitHub</div>
+</div>
+
+<div id="tabs"></div>
+<div id="browserContainer">Your site will appear here.</div>
+
+<script>
+const tabs = [];
+let activeTabIndex = -1;
+
+function createIframe(url) {
+  const iframe = document.createElement('iframe');
+  iframe.src = 'https://allorigins.win/raw?url=' + encodeURIComponent(url);
+  iframe.style.width = '100%';
+  iframe.style.height = '100%';
+  iframe.style.border = '0';
+  return iframe;
+}
+
+function renderTabs() {
+  const tabsDiv = document.getElementById('tabs');
+  tabsDiv.innerHTML='';
+  tabs.forEach((tab,index)=>{
+    const tabEl = document.createElement('div');
+    tabEl.className = 'tab' + (index===activeTabIndex?' active':'');
+    tabEl.textContent = tab.url;
+    tabEl.onclick = ()=> { activeTabIndex=index; renderTabs(); renderActiveTab(); };
+    const closeBtn = document.createElement('span');
+    closeBtn.className='tab-close';
+    closeBtn.textContent='×';
+    closeBtn.onclick = (e)=>{
+      e.stopPropagation();
+      tabs.splice(index,1);
+      if(activeTabIndex>=tabs.length) activeTabIndex=tabs.length-1;
+      renderTabs();
+      renderActiveTab();
     };
-    let activeTabIndex = -1;
-    const renderTabs = () => {
-      const tabsDiv = document.getElementById('tabs');
-      tabsDiv.innerHTML = '';
-      tabs.forEach((tab, idx) => {
-        const tabEl = document.createElement('div');
-        tabEl.className = 'tab' + (idx === activeTabIndex ? ' active' : '');
-        tabEl.textContent = tab.url;
-        tabEl.onclick = () => { activeTabIndex = idx; renderTabs(); renderActiveTab(); };
-        const closeBtn = document.createElement('span');
-        closeBtn.className = 'tab-close'; closeBtn.textContent = '×';
-        closeBtn.onclick = e => { e.stopPropagation(); tabs.splice(idx,1); if (activeTabIndex>=tabs.length) activeTabIndex = tabs.length-1; renderTabs(); renderActiveTab(); };
-        tabEl.appendChild(closeBtn);
-        tabsDiv.appendChild(tabEl);
-      });
-    };
-    const renderActiveTab = () => {
-      const container = document.getElementById('browserContainer');
-      container.innerHTML = '';
-      if (activeTabIndex < 0 || activeTabIndex >= tabs.length) {
-        container.textContent = 'Your site will appear here.';
-        return;
-      }
-      container.appendChild(tabs[activeTabIndex].iframe);
-    };
-    const openInPage = () => {
-      let url = document.getElementById('urlInput').value.trim();
-      if (!url) return alert('Please enter a URL.');
-      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-      const iframe = createIframe(url);
-      tabs.push({url, iframe});
-      activeTabIndex = tabs.length -1;
-      renderTabs(); renderActiveTab();
-    };
-    const openInNewTab = () => {
-      let url = document.getElementById('urlInput').value.trim();
-      if (!url) return alert('Please enter a URL.');
-      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-      const newWindow = window.open('', '_blank');
-      if (!newWindow) return alert('Popup blocked. Allow popups.');
-      const html = `<!DOCTYPE html><html><head><title>${url}</title><style>html,body{margin:0;padding:0;height:100%;overflow:hidden;}iframe{width:100%;height:100%;border:0;}</style></head><body><iframe src="${url}"></iframe></body></html>`;
-      newWindow.document.open(); newWindow.document.write(html); newWindow.document.close();
-    };
-    const loadURL = url => {
-      document.getElementById('urlInput').value = url;
-      openInPage();
-    };
-    document.getElementById('urlInput').addEventListener('keypress', e => { if (e.key === 'Enter') openInPage(); });
-  </script>
+    tabEl.appendChild(closeBtn);
+    tabsDiv.appendChild(tabEl);
+  });
+}
+
+function renderActiveTab() {
+  const container = document.getElementById('browserContainer');
+  container.innerHTML='';
+  if(activeTabIndex<0 || activeTabIndex>=tabs.length){
+    container.innerHTML='Your site will appear here.';
+    return;
+  }
+  container.appendChild(tabs[activeTabIndex].iframe);
+}
+
+function openInPage() {
+  let url = document.getElementById('urlInput').value.trim();
+  if(!url) return alert('Please enter a URL.');
+  if(!/^https?:\/\//i.test(url)) url='https://'+url;
+
+  const iframe=createIframe(url);
+  tabs.push({url,iframe});
+  activeTabIndex=tabs.length-1;
+  renderTabs();
+  renderActiveTab();
+}
+
+async function openInNewTab() {
+  let url = document.getElementById("urlInput").value.trim();
+  if(!url) return alert("Please enter a URL.");
+  if(!/^https?:\/\//i.test(url)) url = "https://" + url;
+
+  const newWindow = window.open('', '_blank');
+  if(!newWindow) return alert("Popup blocked. Allow popups.");
+
+  const apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+    newWindow.document.open();
+    newWindow.document.write(data.contents);
+    newWindow.document.close();
+  } catch (err) {
+    newWindow.close();
+    alert("Failed to load site through proxy: " + err);
+  }
+}
+
+function loadURL(url){
+  document.getElementById('urlInput').value=url;
+  openInPage();
+}
+
+// Trigger Enter key
+document.getElementById('urlInput').addEventListener('keypress',function(e){
+  if(e.key==='Enter') openInPage();
+});
+</script>
+
 </body>
 </html>
