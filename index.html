@@ -11,6 +11,8 @@
       text-align: center;
       margin: 0;
       padding: 0;
+      background: #121212;
+      color: #fff;
     }
     header {
       background: #111;
@@ -19,10 +21,10 @@
     }
     main {
       margin: 40px auto;
-      max-width: 600px;
+      max-width: 800px;
     }
     input[type="text"] {
-      width: 70%;
+      width: 60%;
       padding: 10px;
       border-radius: 6px;
       border: 1px solid #ccc;
@@ -40,6 +42,14 @@
     }
     button:hover {
       background: #3367D6;
+    }
+    #proxyContainer {
+      margin-top: 30px;
+      border: 2px solid #ccc;
+      height: 600px;
+      overflow: auto;
+      background: #fff;
+      color: #000;
     }
     footer {
       background: #111;
@@ -59,6 +69,8 @@
   <main>
     <input type="text" id="urlInput" placeholder="Enter website URL">
     <button onclick="openSite()">Go</button>
+
+    <div id="proxyContainer">The site will load here as well.</div>
   </main>
 
   <footer>
@@ -73,17 +85,21 @@
         url = "https://" + url;
       }
 
-      let apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+      const apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
 
       try {
         const response = await fetch(apiUrl);
         const data = await response.json();
 
-        // Open a new tab as about:blank
+        // 1️⃣ Open in a new tab (about:blank)
         const newWindow = window.open("about:blank", "_blank");
         newWindow.document.open();
         newWindow.document.write(data.contents);
         newWindow.document.close();
+
+        // 2️⃣ Also inject into proxyContainer div on the GitHub Pages site
+        const container = document.getElementById("proxyContainer");
+        container.innerHTML = data.contents;
       } catch (err) {
         alert("Failed to load site through proxy: " + err);
       }
