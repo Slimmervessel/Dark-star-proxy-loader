@@ -1,22 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dark Star Proxy Browser</title>
-<style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; }
-  header { background:#111; color:#fff; padding:10px; text-align:center; }
-  main { margin:20px auto; max-width:1200px; }
-  input[type="text"] { width:50%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:16px; }
-  button { padding:8px 14px; margin-left:5px; border-radius:6px; border:none; background:#4285F4; color:white; cursor:pointer; }
-  button:hover { background:#3367D6; }
-  #tabs { display:flex; margin-top:20px; border-bottom:2px solid #ccc; flex-wrap: wrap; }
-  .tab { padding:8px 12px; cursor:pointer; margin-right:4px; background:#eee; border-radius:6px 6px 0 0; display:flex; align-items:center; font-weight:bold; }
-  .tab.active { background:#fff; border-bottom:2px solid #4285F4; }
-  .tab-close { margin-left:6px; color:red; font-weight:bold; cursor:pointer; }
-  #browserContainer { border:2px solid #ccc; height:700px; margin-top:0; border-radius:0 6px 6px 6px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dark Star Proxy Browser</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:0; }
+    header { background:#111; color:#fff; padding:10px; text-align:center; }
+    main { margin:20px auto; max-width:1200px; text-align:center; }
+    input[type="text"] { width:50%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:16px; }
+    button { padding:8px 14px; margin-left:5px; border-radius:6px; border:none; background:#4285F4; color:white; cursor:pointer; }
+    button:hover { background:#3367D6; }
+  </style>
 </head>
 <body>
 
@@ -25,95 +20,42 @@
 </header>
 
 <main>
-  <input type="text" id="urlInput" placeholder="Enter website URL">
-  <button onclick="openInTab()">Open in Tab</button>
+  <input type="text" id="urlInput" placeholder="Enter website URL" />
   <button onclick="openInNewTab()">Open in New Tab</button>
-
-  <div id="tabs"></div>
-  <div id="browserContainer">Your site will appear here.</div>
 </main>
 
 <script>
-const tabs = [];
-let activeTabIndex = -1;
-
-// Create an iframe using AllOrigins proxy to bypass CORS
-function createIframe(url) {
-  const iframe = document.createElement('iframe');
-  iframe.src = 'https://allorigins.win/raw?url=' + encodeURIComponent(url);
-  iframe.style.width = '100%';
-  iframe.style.height = '100%';
-  iframe.style.border = '0';
-  return iframe;
-}
-
-// Render the tabs bar
-function renderTabs() {
-  const tabsDiv = document.getElementById('tabs');
-  tabsDiv.innerHTML = '';
-  tabs.forEach((tab,index)=>{
-    const tabEl = document.createElement('div');
-    tabEl.className = 'tab' + (index===activeTabIndex?' active':'');
-    tabEl.textContent = tab.url;
-
-    tabEl.onclick = ()=> { activeTabIndex=index; renderTabs(); renderActiveTab(); };
-
-    const closeBtn = document.createElement('span');
-    closeBtn.className='tab-close';
-    closeBtn.textContent='×';
-    closeBtn.onclick = (e)=>{
-      e.stopPropagation();
-      tabs.splice(index,1);
-      if(activeTabIndex>=tabs.length) activeTabIndex=tabs.length-1;
-      renderTabs();
-      renderActiveTab();
-    };
-
-    tabEl.appendChild(closeBtn);
-    tabsDiv.appendChild(tabEl);
-  });
-}
-
-// Render the active tab's iframe
-function renderActiveTab() {
-  const container = document.getElementById('browserContainer');
-  container.innerHTML='';
-  if(activeTabIndex<0 || activeTabIndex>=tabs.length){
-    container.innerHTML='Your site will appear here.';
-    return;
-  }
-  container.appendChild(tabs[activeTabIndex].iframe);
-}
-
-// Open a website in a new in-page tab
-function openInTab() {
-  let url = document.getElementById('urlInput').value.trim();
-  if(!url) return alert('Please enter a URL.');
-  if(!/^https?:\/\//i.test(url)) url='https://'+url;
-
-  const iframe = createIframe(url);
-  tabs.push({url,iframe});
-  activeTabIndex=tabs.length-1;
-  renderTabs();
-  renderActiveTab();
-}
-
-// Open a website in about:blank
 function openInNewTab() {
   let url = document.getElementById('urlInput').value.trim();
-  if(!url) return alert('Please enter a URL.');
-  if(!/^https?:\/\//i.test(url)) url='https://'+url;
+  if (!url) return alert("Please enter a URL.");
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
   const newWindow = window.open('', '_blank');
-  if(!newWindow) return alert("Popup blocked. Allow popups for this site.");
+  if (!newWindow) return alert("Popup blocked. Allow popups for this site.");
 
-  const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-  newWindow.location.href = proxyUrl;
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>${url}</title>
+        <style>
+          html, body { margin:0; height:100%; overflow:hidden; }
+          iframe { width:100%; height:100%; border:0; }
+        </style>
+      </head>
+      <body>
+        <iframe src="${url}"></iframe>
+      </body>
+    </html>
+  `;
+
+  newWindow.document.write(html);
+  newWindow.document.close();
 }
 
-// Trigger enter key
-document.getElementById('urlInput').addEventListener('keypress',function(e){
-  if(e.key==='Enter') openInTab();
+// Optional: Press Enter to open in new tab
+document.getElementById('urlInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') openInNewTab();
 });
 </script>
 
