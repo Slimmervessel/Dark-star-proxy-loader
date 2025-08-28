@@ -1,196 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dark Star Proxy Loader</title>
-<link rel="stylesheet" href="style.css">
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 0;
-    padding: 0;
-  }
-  header {
-    background: #111;
-    color: #fff;
-    padding: 20px;
-  }
-  main {
-    margin: 20px auto;
-    max-width: 900px;
-  }
-  input[type="text"] {
-    width: 60%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-  }
-  button {
-    padding: 10px 16px;
-    margin-left: 5px;
-    border-radius: 6px;
-    border: none;
-    background: #4285F4;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  button:hover {
-    background: #3367D6;
-  }
-  #tabs {
-    margin-top: 20px;
-    display: flex;
-    flex-wrap: wrap;
-  }
-  .tab {
-    background: #eee;
-    color: #111;
-    padding: 8px 14px;
-    margin-right: 4px;
-    border-radius: 6px 6px 0 0;
-    cursor: pointer;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-  }
-  .tab.active {
-    background: #fff;
-    border-bottom: 2px solid #4285F4;
-  }
-  .tab-close {
-    margin-left: 8px;
-    color: red;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  #proxyContainer {
-    border: 2px solid #ccc;
-    height: 600px;
-    overflow: auto;
-    background: #fff;
-    color: #000;
-    border-radius: 0 6px 6px 6px;
-  }
-  footer {
-    background: #111;
-    color: #fff;
-    padding: 10px;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dark Star Proxy Loader</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #111;
+      color: #fff;
+      padding: 20px;
+    }
+    main {
+      margin: 40px auto;
+      max-width: 600px;
+    }
+    input[type="text"] {
+      width: 70%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 16px;
+      margin-left: 5px;
+      border-radius: 6px;
+      border: none;
+      background: #4285F4;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #3367D6;
+    }
+    footer {
+      background: #111;
+      color: #fff;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>DARK STAR PROXY LOADER</h1>
+  </header>
 
-<header>
-  <h1>DARK STAR PROXY LOADER</h1>
-</header>
+  <main>
+    <input type="text" id="urlInput" placeholder="Enter website URL">
+    <button onclick="openInNewTab()">Open in New Tab</button>
+  </main>
 
-<main>
-  <input type="text" id="urlInput" placeholder="Enter website URL">
-  <button onclick="openInNewTab()">Open in New Tab</button>
-  <button onclick="openInPage()">Open in Page</button>
+  <footer>
+    <p>Thomas Ash</p>
+  </footer>
 
-  <div id="tabs"></div>
-  <div id="proxyContainer">Your site will appear here.</div>
-</main>
+  <script>
+    async function openInNewTab() {
+      let url = document.getElementById("urlInput").value.trim();
+      if (!url) return alert("Please enter a URL.");
+      if (!/^https?:\/\//i.test(url)) {
+        url = "https://" + url;
+      }
 
-<footer>
-  <p>Thomas Ash</p>
-</footer>
+      let apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
 
-<script>
-  const tabs = [];
-  let activeTabIndex = -1;
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
 
-  async function fetchSite(url) {
-    if (!url) return alert("Please enter a URL.");
-    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
-    const apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
-    try {
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-      return data.contents;
-    } catch (err) {
-      alert("Failed to load site through proxy: " + err);
-      return null;
+        // Open a new tab as about:blank
+        const newWindow = window.open("about:blank", "_blank");
+        newWindow.document.open();
+        newWindow.document.write(data.contents);
+        newWindow.document.close();
+      } catch (err) {
+        alert("Failed to load site through proxy: " + err);
+      }
     }
-  }
 
-  async function openInNewTab() {
-    const url = document.getElementById("urlInput").value.trim();
-    const content = await fetchSite(url);
-    if (!content) return;
-
-    const newWindow = window.open("about:blank", "_blank");
-    newWindow.document.open();
-    newWindow.document.write(content);
-    newWindow.document.close();
-  }
-
-  async function openInPage() {
-    const url = document.getElementById("urlInput").value.trim();
-    const content = await fetchSite(url);
-    if (!content) return;
-
-    // Add a new tab
-    tabs.push({ url, content });
-    activeTabIndex = tabs.length - 1;
-    renderTabs();
-    renderActiveTab();
-  }
-
-  function renderTabs() {
-    const tabsDiv = document.getElementById("tabs");
-    tabsDiv.innerHTML = '';
-    tabs.forEach((tab, index) => {
-      const tabEl = document.createElement('div');
-      tabEl.className = 'tab' + (index === activeTabIndex ? ' active' : '');
-      tabEl.textContent = tab.url;
-
-      // Tab click to switch
-      tabEl.onclick = () => {
-        activeTabIndex = index;
-        renderTabs();
-        renderActiveTab();
-      };
-
-      // Close button
-      const closeBtn = document.createElement('span');
-      closeBtn.className = 'tab-close';
-      closeBtn.textContent = '×';
-      closeBtn.onclick = (e) => {
-        e.stopPropagation(); // Prevent switching tab
-        tabs.splice(index, 1);
-        if (activeTabIndex >= tabs.length) activeTabIndex = tabs.length - 1;
-        renderTabs();
-        renderActiveTab();
-      };
-
-      tabEl.appendChild(closeBtn);
-      tabsDiv.appendChild(tabEl);
+    // Trigger button on Enter key
+    document.getElementById("urlInput").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") openInNewTab();
     });
-  }
-
-  function renderActiveTab() {
-    const container = document.getElementById("proxyContainer");
-    if (activeTabIndex < 0 || activeTabIndex >= tabs.length) {
-      container.innerHTML = 'Your site will appear here.';
-      return;
-    }
-    container.innerHTML = tabs[activeTabIndex].content;
-  }
-
-  // Enter key triggers Open in Page
-  document.getElementById("urlInput").addEventListener("keypress", function(e) {
-    if (e.key === "Enter") openInPage();
-  });
-</script>
-
+  </script>
 </body>
 </html>
