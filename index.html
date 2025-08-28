@@ -25,7 +25,7 @@
 </main>
 
 <script>
-function openInNewTab() {
+async function openInNewTab() {
   let url = document.getElementById('urlInput').value.trim();
   if (!url) {
     alert('Please enter a URL.');
@@ -35,41 +35,27 @@ function openInNewTab() {
     url = 'https://' + url;
   }
 
-  const proxyUrl = 'https://allorigins.win/raw?url=' + encodeURIComponent(url);
+  const apiUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
   const newWindow = window.open('', '_blank');
   if (!newWindow) {
     alert('Popup blocked. Please allow popups for this site.');
     return;
   }
 
-  // Build a minimal HTML page with an iframe loading the proxy URL
-  const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <title>Proxy: ${url}</title>
-      <style>
-        html, body {
-          margin: 0; 
-          height: 100%; 
-          overflow: hidden; 
-          background: #000;
-        }
-        iframe {
-          width: 100%;
-          height: 100%;
-          border: none;
-        }
-      </style>
-    </head>
-    <body>
-      <iframe src="${proxyUrl}" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
-    </body>
-    </html>
-  `;
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
 
-  newWindow.document.write(html);
-  newWindow.document.close();
+    const data = await response.json();
+
+    // Write the proxied HTML content directly into the new window
+    newWindow.document.open();
+    newWindow.document.write(data.contents);
+    newWindow.document.close();
+  } catch (err) {
+    newWindow.close();
+    alert('Failed to load the site through proxy: ' + err.message);
+  }
 }
 
 // Optional: allow Enter key to trigger openInNewTab
