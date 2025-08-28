@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dark Star Proxy Loader</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
-    header { background: #111; color: #fff; padding: 20px; }
-    main { margin: 40px auto; max-width: 600px; }
-    input[type="text"] { width: 70%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
-    button { padding: 10px 16px; margin-left: 5px; border-radius: 6px; border: none; background: #4285F4; color: white; font-size: 16px; cursor: pointer; }
-    button:hover { background: #3367D6; }
-    footer { background: #111; color: #fff; padding: 10px; position: fixed; bottom: 0; width: 100%; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Star Proxy Loader</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+  header { background: #111; color: #fff; padding: 20px; }
+  main { margin: 40px auto; max-width: 600px; }
+  input[type="text"] { width: 70%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+  button { padding: 10px 16px; margin-left: 5px; border-radius: 6px; border: none; background: #4285F4; color: white; font-size: 16px; cursor: pointer; }
+  button:hover { background: #3367D6; }
+  footer { background: #111; color: #fff; padding: 10px; position: fixed; bottom: 0; width: 100%; }
+</style>
 </head>
 <body>
 <header>
@@ -32,19 +32,22 @@ async function openInNewTab() {
   if (!url) return alert("Please enter a URL.");
   if (!/^https?:\/\//i.test(url)) url = "https://" + url;
 
+  // Open new tab immediately to avoid popup blockers
+  const newWindow = window.open('', '_blank');
+  if (!newWindow) return alert("Popup blocked. Please allow popups for this site.");
+
   const apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
 
   try {
     const response = await fetch(apiUrl);
     const data = await response.json();
 
-    // Create a Blob containing the HTML
-    const blob = new Blob([data.contents], { type: 'text/html' });
-    const blobUrl = URL.createObjectURL(blob);
-
-    // Open a new tab with the blob URL
-    window.open(blobUrl, '_blank');
+    // Write the proxied site into the new window
+    newWindow.document.open();
+    newWindow.document.write(data.contents);
+    newWindow.document.close();
   } catch (err) {
+    newWindow.close(); // Close the tab if fetch failed
     alert("Failed to load site through proxy: " + err);
   }
 }
