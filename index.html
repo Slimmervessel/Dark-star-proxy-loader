@@ -8,9 +8,9 @@
 <style>
   body {
     font-family: Arial, sans-serif;
+    text-align: center;
     margin: 0;
     padding: 0;
-    text-align: center;
   }
   header {
     background: #111;
@@ -54,10 +54,18 @@
     border-radius: 6px 6px 0 0;
     cursor: pointer;
     font-weight: bold;
+    display: flex;
+    align-items: center;
   }
   .tab.active {
     background: #fff;
     border-bottom: 2px solid #4285F4;
+  }
+  .tab-close {
+    margin-left: 8px;
+    color: red;
+    font-weight: bold;
+    cursor: pointer;
   }
   #proxyContainer {
     border: 2px solid #ccc;
@@ -118,6 +126,7 @@
     const url = document.getElementById("urlInput").value.trim();
     const content = await fetchSite(url);
     if (!content) return;
+
     const newWindow = window.open("about:blank", "_blank");
     newWindow.document.open();
     newWindow.document.write(content);
@@ -143,18 +152,37 @@
       const tabEl = document.createElement('div');
       tabEl.className = 'tab' + (index === activeTabIndex ? ' active' : '');
       tabEl.textContent = tab.url;
+
+      // Tab click to switch
       tabEl.onclick = () => {
         activeTabIndex = index;
         renderTabs();
         renderActiveTab();
       };
+
+      // Close button
+      const closeBtn = document.createElement('span');
+      closeBtn.className = 'tab-close';
+      closeBtn.textContent = '×';
+      closeBtn.onclick = (e) => {
+        e.stopPropagation(); // Prevent switching tab
+        tabs.splice(index, 1);
+        if (activeTabIndex >= tabs.length) activeTabIndex = tabs.length - 1;
+        renderTabs();
+        renderActiveTab();
+      };
+
+      tabEl.appendChild(closeBtn);
       tabsDiv.appendChild(tabEl);
     });
   }
 
   function renderActiveTab() {
-    if (activeTabIndex < 0 || activeTabIndex >= tabs.length) return;
     const container = document.getElementById("proxyContainer");
+    if (activeTabIndex < 0 || activeTabIndex >= tabs.length) {
+      container.innerHTML = 'Your site will appear here.';
+      return;
+    }
     container.innerHTML = tabs[activeTabIndex].content;
   }
 
