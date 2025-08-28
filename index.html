@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -11,11 +11,13 @@
       padding: 0;
       background: #0d0d0d;
       color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
 
     main {
-      margin: 20px auto;
-      max-width: 1200px;
       text-align: center;
     }
 
@@ -62,7 +64,7 @@
 
 <main>
   <input type="text" id="urlInput" placeholder="Enter website URL" />
-  <button onclick="openInNewTab()">Open in New Tab</button>
+  <button onclick="openInNewTab()">Open in about:blank</button>
 </main>
 
 <script>
@@ -101,7 +103,7 @@
     }
   }
 
-  // Optional: allow Enter key to trigger openInNewTab
+  // Allow Enter key to trigger openInNewTab
   document.getElementById('urlInput').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') openInNewTab();
   });
