@@ -3,8 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>google</title>
+  <title>Dark Star Proxy Loader</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #111;
+      color: #fff;
+      padding: 20px;
+    }
+    main {
+      margin: 40px auto;
+      max-width: 600px;
+    }
+    input[type="text"] {
+      width: 70%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 16px;
+      margin-left: 5px;
+      border-radius: 6px;
+      border: none;
+      background: #4285F4;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #3367D6;
+    }
+    footer {
+      background: #111;
+      color: #fff;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -12,10 +57,42 @@
   </header>
 
   <main>
+    <input type="text" id="urlInput" placeholder="Enter website URL">
+    <button onclick="openSite()">Go</button>
   </main>
 
   <footer>
     <p>Thomas Ash</p>
   </footer>
+
+  <script>
+    async function openSite() {
+      let url = document.getElementById("urlInput").value.trim();
+      if (!url) return alert("Please enter a URL.");
+      if (!/^https?:\/\//i.test(url)) {
+        url = "https://" + url;
+      }
+
+      let apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        // Open a new tab as about:blank
+        const newWindow = window.open("about:blank", "_blank");
+        newWindow.document.open();
+        newWindow.document.write(data.contents);
+        newWindow.document.close();
+      } catch (err) {
+        alert("Failed to load site through proxy: " + err);
+      }
+    }
+
+    // Trigger Go on Enter key
+    document.getElementById("urlInput").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") openSite();
+    });
+  </script>
 </body>
 </html>
