@@ -59,7 +59,94 @@
   </main>
 
   <script>
-    function openInNewTab() {
+    async function loadPage(newWindow, url) {
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
+
+      const iframe = newWindow.document.getElementById("proxyFrame");
+      const iframeDoc = iframe.contentDocument;
+
+      // Show loading
+      iframeDoc.open();
+      iframeDoc.write(`<h3 style="color:white; background:black; text-align:center;">Loading ${url}...</h3>`);
+      iframeDoc.close();
+
+      const apiUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error("HTTP error: " + response.status);
+        const data = await response.json();
+
+        // Inject proxy script AFTER site HTML
+        const proxyScript = `
+          <script>
+            // Use event delegation for ALL clicks (covers new dynamic links too)
+            document.addEventListener("click", function(e) {
+              let a = e.target.closest("a");
+              if (a && a.href) {
+                e.preventDefault();
+                parent.loadPage(window.topProxyWindow, a.href);
+              }
+            });
+
+            // Intercept forms
+            document.addEventListener("submit", function(e) {
+              let f = e.target;
+              if (f.action) {
+                e.preventDefault();
+                parent.loadPage(window.topProxyWindow, f.action);
+              }
+            });
+
+            // Override window.location
+            Object.defineProperty(window, 'location', {
+              set: (url) => parent.loadPage(window.topProxyWindow, url),
+              get: () => ({ href: '' })
+            });
+
+            // Override history API
+            const pushState = history.pushState;
+            history.pushState = function(state, title, url) {
+              parent.loadPage(window.topProxyWindow, url);
+              return pushState.apply(this, arguments);
+            };
+
+            // Proxy fetch
+            const origFetch = window.fetch;
+            window.fetch = function(resource, options) {
+              let fullUrl = (typeof resource === 'string') ? resource : resource.url;
+              let proxied = "https://api.allorigins.win/raw?url=" + encodeURIComponent(fullUrl);
+              return origFetch(proxied, options);
+            };
+
+            // Proxy XMLHttpRequest
+            const OrigXHR = window.XMLHttpRequest;
+            window.XMLHttpRequest = function() {
+              const xhr = new OrigXHR();
+              const open = xhr.open;
+              xhr.open = function(method, url, async, user, pass) {
+                let proxied = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+                return open.call(this, method, proxied, async, user, pass);
+              };
+              return xhr;
+            };
+          <\/script>
+        `;
+
+        iframeDoc.open();
+        iframeDoc.write(data.contents + proxyScript);
+        iframeDoc.close();
+
+      } catch (err) {
+        iframeDoc.open();
+        iframeDoc.write(`<h2 style="color:red; text-align:center;">Failed to load: ${err.message}</h2>`);
+        iframeDoc.close();
+      }
+    }
+
+    async function openInNewTab() {
       let url = document.getElementById('urlInput').value.trim();
       if (!url) {
         alert('Please enter a URL.');
@@ -68,9 +155,36 @@
       if (!/^https?:\/\//i.test(url)) {
         url = 'https://' + url;
       }
-      window.open(url, '_blank');
+
+      const newWindow = window.open('about:blank', '_blank');
+      if (!newWindow) {
+        alert('Popup blocked. Please allow popups.');
+        return;
+      }
+
+      newWindow.document.open();
+      newWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Proxy Viewer</title>
+          <style>
+            body, html { margin:0; padding:0; height:100%; background:black; color:white; }
+            iframe { border:0; width:100%; height:100%; }
+          </style>
+        </head>
+        <body>
+          <iframe id="proxyFrame"></iframe>
+        </body>
+        </html>
+      `);
+      newWindow.document.close();
+
+      newWindow.topProxyWindow = newWindow;
+      loadPage(newWindow, url);
     }
 
+    // Enter key support
     document.getElementById('urlInput').addEventListener('keypress', function (e) {
       if (e.key === 'Enter') openInNewTab();
     });
