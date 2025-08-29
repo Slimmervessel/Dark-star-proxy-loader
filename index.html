@@ -29,38 +29,36 @@ async function openProxyTab(url, customTitle = "Proxy Viewer", faviconUrl = "") 
         const iframe = document.getElementById('proxyFrame');
         const loading = document.getElementById('loading');
 
-        // Show iframe when fully loaded
         iframe.onload = () => {
           loading.style.display = 'none';
           iframe.style.display = 'block';
         };
 
-        // Intercept clicks inside iframe (works only for same-origin)
+        // Attempt to intercept internal clicks (works only for same-origin)
         iframe.addEventListener('load', () => {
           try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            iframeDoc.addEventListener('click', e => {
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.addEventListener('click', e => {
               const a = e.target.closest('a');
               if (a && a.href) {
                 e.preventDefault();
-                iframe.src = a.href; // Only works if same-origin
+                iframe.src = a.href;
                 loading.style.display = 'block';
                 iframe.style.display = 'none';
               }
             });
           } catch(err) {
-            // Cross-origin links cannot be intercepted
             console.warn("Cannot intercept links: cross-origin policy", err);
           }
         });
-      </script>
+      <\/script>
     </body>
     </html>
   `);
   newWindow.document.close();
 }
 
-// Button functions
+// Button handlers
 function openInNewTab() {
   const url = document.getElementById('urlInput').value.trim();
   const title = document.getElementById('titleInput').value.trim() || "Proxy Viewer";
@@ -70,10 +68,11 @@ function openInNewTab() {
 
 function openGitHubSite() {
   const url = document.getElementById('ghInput').value.trim();
+  if (!url) return alert("Enter a GitHub Pages site URL.");
   openProxyTab(url, "GitHub Proxy", "");
 }
 
-// Enter key = quick open
+// Quick open on Enter key
 document.getElementById('urlInput').addEventListener('keypress', e => {
   if (e.key === 'Enter') openInNewTab();
 });
