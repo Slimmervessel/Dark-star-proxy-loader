@@ -15,82 +15,8 @@
       flex-direction: column;
       height: 100vh;
     }
-    #tabBar {
-      display: flex;
-      background: #111;
-      padding: 6px;
-      overflow-x: auto;
-    }
-    .tabButton {
-      padding: 6px 12px;
-      margin-right: 4px;
-      background: #222;
-      border: none;
-      border-radius: 5px;
-      color: #eee;
-      cursor: pointer;
-    }
-    .tabButton.active {
-      background: #6a5acd;
-    }
-    .tabButton .closeBtn {
-      margin-left: 8px;
-      color: #f55;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    #controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 10px 0;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    #urlInput, #searchInput {
-      padding: 10px 20px;
-      border-radius: 30px;
-      border: none;
-      background: #222;
-      color: #eee;
-      font-size: 16px;
-      box-shadow: inset 0 0 8px #444;
-      outline: none;
-    }
-    #urlInput {
-      flex: 1;
-      min-width: 300px;
-    }
-    #urlInput:focus, #searchInput:focus {
-      box-shadow: inset 0 0 12px #6a5acd;
-      background: #111;
-    }
-    button {
-      padding: 8px 16px;
-      border-radius: 30px;
-      border: none;
-      background: #6a5acd;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      margin: 4px;
-    }
-    button:hover {
-      background: #5848c2;
-    }
-    iframe {
-      flex: 1;
-      width: 100%;
-      border: none;
-      display: none;
-    }
-    #main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
 
-    /* Style for the middle app-like section */
+    /* Centering the favorites section */
     #favorites {
       display: flex;
       justify-content: center;
@@ -101,6 +27,7 @@
       max-width: 1200px;
       text-align: center;
     }
+
     .appIcon {
       display: flex;
       flex-direction: column;
@@ -113,42 +40,131 @@
       cursor: pointer;
       transition: transform 0.3s;
     }
+
     .appIcon img {
       max-width: 40px;
       max-height: 40px;
     }
+
     .appIcon:hover {
       transform: scale(1.1);
     }
+
+    /* Existing styles for tabs and controls */
+    #tabBar {
+      display: flex;
+      background: #111;
+      padding: 6px;
+      overflow-x: auto;
+    }
+
+    .tabButton {
+      padding: 6px 12px;
+      margin-right: 4px;
+      background: #222;
+      border: none;
+      border-radius: 5px;
+      color: #eee;
+      cursor: pointer;
+    }
+
+    .tabButton.active {
+      background: #6a5acd;
+    }
+
+    .tabButton .closeBtn {
+      margin-left: 8px;
+      color: #f55;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 10px 0;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    #urlInput, #searchInput {
+      padding: 10px 20px;
+      border-radius: 30px;
+      border: none;
+      background: #222;
+      color: #eee;
+      font-size: 16px;
+      box-shadow: inset 0 0 8px #444;
+      outline: none;
+    }
+
+    #urlInput {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    #urlInput:focus,
+    #searchInput:focus {
+      box-shadow: inset 0 0 12px #6a5acd;
+      background: #111;
+    }
+
+    button {
+      padding: 8px 16px;
+      border-radius: 30px;
+      border: none;
+      background: #6a5acd;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 4px;
+    }
+
+    button:hover {
+      background: #5848c2;
+    }
+
+    iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+      display: none;
+    }
+
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
   </style>
 </head>
+
 <body>
 
-<div id="tabBar"></div>
-
-<!-- New Favorites Section -->
+<!-- Favorites Section (Centered in the Middle) -->
 <div id="favorites">
-  <div class="appIcon" onclick="window.open('https://www.google.com')">
+  <div class="appIcon" onclick="openInBlank('https://www.google.com')">
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Google_icon.svg/1200px-Google_icon.svg.png" alt="Google">
     <p>Google</p>
   </div>
-  <div class="appIcon" onclick="window.open('https://www.youtube.com')">
+  <div class="appIcon" onclick="openInBlank('https://www.youtube.com')">
     <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube">
     <p>YouTube</p>
   </div>
-  <div class="appIcon" onclick="window.open('https://www.spotify.com')">
+  <div class="appIcon" onclick="openInBlank('https://www.spotify.com')">
     <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Spotify_Logo.png" alt="Spotify">
     <p>Spotify</p>
   </div>
-  <div class="appIcon" onclick="window.open('https://discord.com')">
+  <div class="appIcon" onclick="openInBlank('https://discord.com')">
     <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Discord_logo.svg" alt="Discord">
     <p>Discord</p>
   </div>
-  <div class="appIcon" onclick="window.open('https://www.chat.openai.com')">
+  <div class="appIcon" onclick="openInBlank('https://www.chat.openai.com')">
     <img src="https://upload.wikimedia.org/wikipedia/commons/a/a7/OpenAI_Logo.svg" alt="ChatGPT">
     <p>ChatGPT</p>
   </div>
-  <div class="appIcon" onclick="window.open('https://www.tiktok.com')">
+  <div class="appIcon" onclick="openInBlank('https://www.tiktok.com')">
     <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/TikTok_logo_2018.svg" alt="TikTok">
     <p>TikTok</p>
   </div>
@@ -170,7 +186,7 @@
 
 <script>
 // ✨ Your deployed Node proxy base URL here! Replace with your proxy's URL:
-const proxyBase = 'https://yourproxyserver.com/proxy?url=';
+const proxyBase = 'https://gointospace.app/&?url=';
 
 let tabs = [];
 let activeTab = null;
@@ -242,20 +258,13 @@ function searchDuckDuckGo() {
   createTab('DuckDuckGo: ' + query, url);
 }
 
-function openInBlank() {
-  if (!activeTab) return alert('No active tab!');
-
-  // Fetch the proxied URL content and open in new window
-  fetch(proxyBase + encodeURIComponent(activeTab.url))
-    .then(res => res.text())
-    .then(html => {
-      const newWindow = window.open();
-      newWindow.document.write(html);
-      newWindow.document.close();
-    })
-    .catch(() => {
-      alert('Failed to load content in about:blank');
-    });
+function openInBlank(url) {
+  const newWindow = window.open('about:blank', '_blank');
+  if (!newWindow) return alert('Popup blocked. Please allow popups.');
+  
+  newWindow.document.write('<h3>Loading ' + url + '...</h3>');
+  newWindow.document.close();
+  newWindow.location.href = url; // Navigate to the website in the new window
 }
 
 // Navigation buttons
