@@ -104,15 +104,23 @@
         </head>
         <body>
           <div id="loading">Loading ${url}...</div>
-          <iframe id="proxyFrame" src="${url}"></iframe>
+          <iframe id="proxyFrame"></iframe>
 
           <script>
             const iframe = document.getElementById('proxyFrame');
             const loading = document.getElementById('loading');
-            iframe.onload = () => {
-              loading.style.display = 'none';
-              iframe.style.display = 'block';
-            };
+
+            // Use AllOrigins to fetch the page HTML
+            fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('${url}'))
+              .then(response => response.json())
+              .then(data => {
+                iframe.srcdoc = data.contents;
+                loading.style.display = 'none';
+                iframe.style.display = 'block';
+              })
+              .catch(err => {
+                loading.innerHTML = 'Failed to load: ' + err.message;
+              });
           <\/script>
         </body>
         </html>
@@ -133,7 +141,6 @@
       openProxyTab(url, "GitHub Proxy", "");
     }
 
-    // Enter key = quick open
     document.getElementById('urlInput').addEventListener('keypress', e => {
       if (e.key === 'Enter') openInNewTab();
     });
