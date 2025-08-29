@@ -6,290 +6,208 @@
   <title>Dark Star Proxy Browser</title>
   <style>
     body {
+      font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
       background: #0d0d0d;
       color: #eee;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
     }
-
-    /* Centering the favorites section */
-    #favorites {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin: 30px auto;
+    main {
+      margin: 20px auto;
       max-width: 1200px;
       text-align: center;
     }
-
-    .appIcon {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 80px;
-      height: 80px;
-      background: #222;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: transform 0.3s;
-    }
-
-    .appIcon img {
-      max-width: 40px;
-      max-height: 40px;
-    }
-
-    .appIcon:hover {
-      transform: scale(1.1);
-    }
-
-    /* Existing styles for tabs and controls */
-    #tabBar {
-      display: flex;
-      background: #111;
-      padding: 6px;
-      overflow-x: auto;
-    }
-
-    .tabButton {
-      padding: 6px 12px;
-      margin-right: 4px;
-      background: #222;
-      border: none;
-      border-radius: 5px;
-      color: #eee;
-      cursor: pointer;
-    }
-
-    .tabButton.active {
-      background: #6a5acd;
-    }
-
-    .tabButton .closeBtn {
-      margin-left: 8px;
-      color: #f55;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    #controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 10px 0;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    #urlInput, #searchInput {
+    #urlInput, #titleInput, #faviconInput, #ghInput {
+      width: 50%;
       padding: 10px 20px;
       border-radius: 30px;
       border: none;
-      background: #222;
+      background-color: #222;
       color: #eee;
       font-size: 16px;
       box-shadow: inset 0 0 8px #444;
       outline: none;
+      transition: box-shadow 0.3s ease, background-color 0.3s ease;
+      margin: 8px 0;
     }
-
-    #urlInput {
-      flex: 1;
-      min-width: 300px;
+    #urlInput::placeholder, #titleInput::placeholder, #faviconInput::placeholder, #ghInput::placeholder {
+      color: #888;
     }
-
-    #urlInput:focus,
-    #searchInput:focus {
+    #urlInput:focus, #titleInput:focus, #faviconInput:focus, #ghInput:focus {
       box-shadow: inset 0 0 12px #6a5acd;
-      background: #111;
+      background-color: #111;
     }
-
     button {
-      padding: 8px 16px;
+      padding: 10px 18px;
       border-radius: 30px;
       border: none;
       background: #6a5acd;
       color: white;
       font-weight: bold;
       cursor: pointer;
-      margin: 4px;
+      margin: 8px;
+      transition: background-color 0.3s ease;
     }
-
     button:hover {
-      background: #5848c2;
+      background-color: #5848c2;
     }
-
-    iframe {
-      flex: 1;
-      width: 100%;
-      border: none;
-      display: none;
+    .settings {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #333;
+      border-radius: 12px;
+      background: #111;
+      box-shadow: 0 0 12px #222;
     }
-
-    #main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
+    h2 {
+      margin: 0 0 10px;
+      color: #6a5acd;
     }
   </style>
 </head>
-
 <body>
+  <main>
+    <input type="text" id="urlInput" placeholder="Enter website URL" />
+    <button onclick="openInNewTab()">Open in New Tab</button>
 
-<!-- Favorites Section (Centered in the Middle) -->
-<div id="favorites">
-  <div class="appIcon" onclick="openInBlank('https://www.google.com')">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Google_icon.svg/1200px-Google_icon.svg.png" alt="Google">
-    <p>Google</p>
-  </div>
-  <div class="appIcon" onclick="openInBlank('https://www.youtube.com')">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube">
-    <p>YouTube</p>
-  </div>
-  <div class="appIcon" onclick="openInBlank('https://www.spotify.com')">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Spotify_Logo.png" alt="Spotify">
-    <p>Spotify</p>
-  </div>
-  <div class="appIcon" onclick="openInBlank('https://discord.com')">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Discord_logo.svg" alt="Discord">
-    <p>Discord</p>
-  </div>
-  <div class="appIcon" onclick="openInBlank('https://www.chat.openai.com')">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a7/OpenAI_Logo.svg" alt="ChatGPT">
-    <p>ChatGPT</p>
-  </div>
-  <div class="appIcon" onclick="openInBlank('https://www.tiktok.com')">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/TikTok_logo_2018.svg" alt="TikTok">
-    <p>TikTok</p>
-  </div>
-</div>
+    <div class="settings">
+      <h2>Settings</h2>
+      <input type="text" id="titleInput" placeholder="Custom Tab Title (cloak)" />
+      <input type="text" id="faviconInput" placeholder="Favicon URL (cloak)" />
+      <input type="text" id="ghInput" placeholder="Enter GitHub Pages site (ex: https://username.github.io)" />
+      <button onclick="openGitHubSite()">Open GitHub in About:Blank</button>
+    </div>
+  </main>
 
-<!-- Controls -->
-<div id="controls">
-  <button onclick="goBack()">&#8592;</button>
-  <button onclick="goForward()">&#8594;</button>
-  <button onclick="reloadTab()">&#10227;</button>
-  <input type="text" id="urlInput" placeholder="Enter search or web address" />
-  <button onclick="openTab()">Go</button>
-  <input type="text" id="searchInput" placeholder="Search DuckDuckGo" />
-  <button onclick="searchDuckDuckGo()">Search</button>
-  <button id="openBlankBtn" onclick="openInBlank()">Open in About:Blank</button>
-</div>
+  <script>
+    async function loadPage(newWindow, url) {
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
 
-<div id="main"></div>
+      const iframe = newWindow.document.getElementById("proxyFrame");
+      const iframeDoc = iframe.contentDocument;
 
-<script>
-// ✨ Your deployed Node proxy base URL here! Replace with your proxy's URL:
-const proxyBase = 'https://gointospace.app/&?url=';
+      // Loading screen
+      iframeDoc.open();
+      iframeDoc.write(`<h3 style="color:white; background:black; text-align:center;">Loading ${url}...</h3>`);
+      iframeDoc.close();
 
-let tabs = [];
-let activeTab = null;
+      const apiUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
 
-function createTab(title, url) {
-  const tabBar = document.getElementById('tabBar');
-  const main = document.getElementById('main');
-  const tabId = 'tab-' + tabs.length;
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error("HTTP error: " + response.status);
+        const data = await response.json();
 
-  const btn = document.createElement('button');
-  btn.className = 'tabButton';
-  btn.innerHTML = title + ' <span class="closeBtn" onclick="closeTab(event,\'' + tabId + '\')">&times;</span>';
-  btn.onclick = () => switchTab(tabId);
-  tabBar.appendChild(btn);
+        const proxyScript = `
+          <script>
+            document.addEventListener("click", function(e) {
+              let a = e.target.closest("a");
+              if (a && a.href) {
+                e.preventDefault();
+                parent.loadPage(window.topProxyWindow, a.href);
+              }
+            });
+          <\/script>
+        `;
 
-  const iframe = document.createElement('iframe');
-  iframe.id = tabId;
-  main.appendChild(iframe);
+        iframeDoc.open();
+        iframeDoc.write(data.contents + proxyScript);
+        iframeDoc.close();
 
-  // Load via proxy URL (iframe src set to proxied URL)
-  const proxiedUrl = proxyBase + encodeURIComponent(url);
-  iframe.src = proxiedUrl;
-  iframe.onload = () => iframe.style.display = 'block';
-  iframe.onerror = () => {
-    iframe.style.display = 'none';
-    alert('Failed to load ' + url + ' via proxy.');
-  };
-
-  tabs.push({ id: tabId, button: btn, iframe: iframe, url: url });
-  switchTab(tabId);
-}
-
-function switchTab(id) {
-  tabs.forEach(tab => {
-    tab.iframe.style.display = 'none';
-    tab.button.classList.remove('active');
-    if (tab.id === id) {
-      tab.iframe.style.display = 'block';
-      tab.button.classList.add('active');
-      activeTab = tab;
+      } catch (err) {
+        iframeDoc.open();
+        iframeDoc.write(`<h2 style="color:red; text-align:center;">Failed to load: ${err.message}</h2>`);
+        iframeDoc.close();
+      }
     }
-  });
-}
 
-function closeTab(e, id) {
-  e.stopPropagation();
-  const tab = tabs.find(t => t.id === id);
-  if (!tab) return;
-  tab.iframe.remove();
-  tab.button.remove();
-  tabs = tabs.filter(t => t.id !== id);
-  if (activeTab && activeTab.id === id) {
-    if (tabs.length) switchTab(tabs[tabs.length - 1].id);
-    else activeTab = null;
-  }
-}
+    async function openInNewTab() {
+      let url = document.getElementById('urlInput').value.trim();
+      let customTitle = document.getElementById('titleInput').value.trim() || "Proxy Viewer";
+      let faviconUrl = document.getElementById('faviconInput').value.trim();
 
-function openTab() {
-  let url = document.getElementById('urlInput').value.trim();
-  if (!url) return;
-  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-  createTab(url, url);
-}
+      if (!url) {
+        alert('Please enter a URL.');
+        return;
+      }
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
 
-function searchDuckDuckGo() {
-  let query = document.getElementById('searchInput').value.trim();
-  if (!query) return;
-  let url = 'https://duckduckgo.com/?q=' + encodeURIComponent(query);
-  createTab('DuckDuckGo: ' + query, url);
-}
+      const newWindow = window.open('about:blank', '_blank');
+      if (!newWindow) {
+        alert('Popup blocked. Please allow popups.');
+        return;
+      }
 
-function openInBlank(url) {
-  const newWindow = window.open('about:blank', '_blank');
-  if (!newWindow) return alert('Popup blocked. Please allow popups.');
-  
-  newWindow.document.write('<h3>Loading ' + url + '...</h3>');
-  newWindow.document.close();
-  newWindow.location.href = url; // Navigate to the website in the new window
-}
+      // Cloaking
+      let faviconTag = faviconUrl ? `<link rel="icon" href="${faviconUrl}">` : "";
 
-// Navigation buttons
-function goBack() {
-  if (activeTab && activeTab.iframe.contentWindow) activeTab.iframe.contentWindow.history.back();
-}
-function goForward() {
-  if (activeTab && activeTab.iframe.contentWindow) activeTab.iframe.contentWindow.history.forward();
-}
-function reloadTab() {
-  if (activeTab) {
-    // Reload via proxy URL
-    const proxiedUrl = proxyBase + encodeURIComponent(activeTab.url);
-    activeTab.iframe.src = proxiedUrl;
-  }
-}
+      newWindow.document.open();
+      newWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>${customTitle}</title>
+          ${faviconTag}
+          <style>
+            body, html { margin:0; padding:0; height:100%; background:black; color:white; }
+            iframe { border:0; width:100%; height:100%; }
+          </style>
+        </head>
+        <body>
+          <iframe id="proxyFrame"></iframe>
+        </body>
+        </html>
+      `);
+      newWindow.document.close();
 
-// Enter key support
-document.getElementById('urlInput').addEventListener('keypress', e => {
-  if (e.key === 'Enter') openTab();
-});
-document.getElementById('searchInput').addEventListener('keypress', e => {
-  if (e.key === 'Enter') searchDuckDuckGo();
-});
-</script>
+      newWindow.topProxyWindow = newWindow;
+      loadPage(newWindow, url);
+    }
 
+    async function openGitHubSite() {
+      let ghUrl = document.getElementById('ghInput').value.trim();
+      if (!ghUrl) {
+        alert('Enter a GitHub Pages site URL.');
+        return;
+      }
+      if (!/^https?:\/\//i.test(ghUrl)) {
+        ghUrl = 'https://' + ghUrl;
+      }
+
+      const ghWindow = window.open('about:blank', '_blank');
+      if (!ghWindow) {
+        alert('Popup blocked. Please allow popups.');
+        return;
+      }
+
+      ghWindow.document.open();
+      ghWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>GitHub Proxy</title>
+          <style>
+            body, html { margin:0; padding:0; height:100%; background:black; color:white; }
+            iframe { border:0; width:100%; height:100%; }
+          </style>
+        </head>
+        <body>
+          <iframe src="${ghUrl}"></iframe>
+        </body>
+        </html>
+      `);
+      ghWindow.document.close();
+    }
+
+    // Enter key = quick open
+    document.getElementById('urlInput').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') openInNewTab();
+    });
+  </script>
 </body>
 </html>
+
