@@ -97,64 +97,45 @@
       return __uv$config.prefix + __uv$config.encodeUrl(url);
     }
 
-    // Open proxied site in new tab
+    // Open proxied site in new tab (robust version)
     function openInNewTab() {
       let url = document.getElementById('urlInput').value.trim();
       let customTitle = document.getElementById('titleInput').value.trim() || "Proxy Viewer";
       let faviconUrl = document.getElementById('faviconInput').value.trim();
 
-      if (!url) {
-        alert('Please enter a URL.');
-        return;
-      }
+      if (!url) { alert('Please enter a URL.'); return; }
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
 
-      const newWindow = window.open('about:blank', '_blank');
-      if (!newWindow) {
-        alert('Popup blocked. Please allow popups.');
-        return;
-      }
-
-      let faviconTag = faviconUrl ? `<link rel="icon" href="${faviconUrl}">` : "";
-
-      newWindow.document.open();
-      newWindow.document.write(`
+      const iframeUrl = encodeUV(url);
+      const html = `
         <!DOCTYPE html>
         <html>
         <head>
           <title>${customTitle}</title>
-          ${faviconTag}
+          ${faviconUrl ? `<link rel="icon" href="${faviconUrl}">` : ""}
           <style>
             body, html { margin:0; padding:0; height:100%; background:black; color:white; }
             iframe { border:0; width:100%; height:100%; }
           </style>
         </head>
         <body>
-          <iframe src="${encodeUV(url)}"></iframe>
+          <iframe src="${iframeUrl}"></iframe>
         </body>
         </html>
-      `);
-      newWindow.document.close();
+      `;
+
+      const newWindow = window.open("data:text/html," + encodeURIComponent(html), "_blank");
+      if (!newWindow) alert('Popup blocked. Please allow popups.');
     }
 
-    // GitHub Pages passthrough
+    // GitHub Pages passthrough (robust version)
     function openGitHubSite() {
       let ghUrl = document.getElementById('ghInput').value.trim();
-      if (!ghUrl) {
-        alert('Enter a GitHub Pages site URL.');
-        return;
-      }
-      if (!/^https?:\/\//i.test(ghUrl)) {
-        ghUrl = 'https://' + ghUrl;
-      }
+      if (!ghUrl) { alert('Enter a GitHub Pages site URL.'); return; }
+      if (!/^https?:\/\//i.test(ghUrl)) ghUrl = 'https://' + ghUrl;
 
-      const ghWindow = window.open('about:blank', '_blank');
-      if (!ghWindow) {
-        alert('Popup blocked. Please allow popups.');
-        return;
-      }
-
-      ghWindow.document.open();
-      ghWindow.document.write(`
+      const iframeUrl = encodeUV(ghUrl);
+      const html = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -165,11 +146,13 @@
           </style>
         </head>
         <body>
-          <iframe src="${encodeUV(ghUrl)}"></iframe>
+          <iframe src="${iframeUrl}"></iframe>
         </body>
         </html>
-      `);
-      ghWindow.document.close();
+      `;
+
+      const ghWindow = window.open("data:text/html," + encodeURIComponent(html), "_blank");
+      if (!ghWindow) alert('Popup blocked. Please allow popups.');
     }
 
     // Enter = quick open
