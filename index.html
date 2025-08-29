@@ -1,93 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dark Star Proxy Browser</title>
-<style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; background:#0d0d0d; color:#eee; }
-main { margin:20px auto; max-width:1200px; text-align:center; }
-#urlInput, #titleInput, #faviconInput, #ghInput {
-  width:50%; padding:10px 20px; border-radius:30px; border:none; background:#222; color:#eee;
-  font-size:16px; box-shadow: inset 0 0 8px #444; outline:none; transition:box-shadow 0.3s ease, background-color 0.3s ease; margin:8px 0;
-}
-#urlInput::placeholder, #titleInput::placeholder, #faviconInput::placeholder, #ghInput::placeholder { color:#888; }
-#urlInput:focus, #titleInput:focus, #faviconInput:focus, #ghInput:focus { box-shadow: inset 0 0 12px #6a5acd; background:#111; }
-button { padding:10px 18px; border-radius:30px; border:none; background:#6a5acd; color:white; font-weight:bold; cursor:pointer; margin:8px; transition: background-color 0.3s ease; }
-button:hover { background-color:#5848c2; }
-.settings { margin-top:20px; padding:15px; border:1px solid #333; border-radius:12px; background:#111; box-shadow:0 0 12px #222; }
-h2 { margin:0 0 10px; color:#6a5acd; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dark Star Proxy Browser</title>
+  <style>
+    body {
+      margin:0; padding:0;
+      font-family:Arial,sans-serif;
+      background:#0d0d0d; color:#eee;
+      display:flex; flex-direction:column;
+      height:100vh;
+    }
+    #tabBar {
+      display:flex; background:#111; padding:6px; overflow-x:auto;
+    }
+    .tabButton {
+      padding:6px 12px; margin-right:4px;
+      background:#222; border:none;
+      border-radius:5px; color:#eee;
+      cursor:pointer;
+    }
+    .tabButton.active { background:#6a5acd; }
+    .tabButton .closeBtn {
+      margin-left:8px; color:#f55;
+      cursor:pointer; font-weight:bold;
+    }
+    #controls {
+      display:flex; justify-content:center;
+      align-items:center; margin:10px 0;
+      gap:6px; flex-wrap:wrap;
+    }
+    #urlInput, #searchInput {
+      padding:10px 20px; border-radius:30px;
+      border:none; background:#222; color:#eee;
+      font-size:16px;
+      box-shadow: inset 0 0 8px #444;
+      outline:none;
+    }
+    #urlInput { flex:1; min-width:300px; }
+    #urlInput:focus, #searchInput:focus {
+      box-shadow: inset 0 0 12px #6a5acd;
+      background:#111;
+    }
+    button {
+      padding:8px 16px;
+      border-radius:30px;
+      border:none;
+      background:#6a5acd;
+      color:white;
+      font-weight:bold;
+      cursor:pointer;
+      margin:4px;
+    }
+    button:hover { background:#5848c2; }
+    iframe {
+      flex:1; width:100%; border:none;
+      display:none;
+    }
+    #main {
+      flex:1; display:flex; flex-direction:column;
+    }
+  </style>
 </head>
 <body>
-<main>
-  <input type="text" id="urlInput" placeholder="Enter website URL" />
-  <button onclick="openInNewTab()">Open in New Tab</button>
-  <div class="settings">
-    <h2>Settings</h2>
-    <input type="text" id="titleInput" placeholder="Custom Tab Title (cloak)" />
-    <input type="text" id="faviconInput" placeholder="Favicon URL (cloak)" />
-    <input type="text" id="ghInput" placeholder="Enter GitHub Pages site (ex: https://username.github.io)" />
-    <button onclick="openGitHubSite()">Open GitHub in About:Blank</button>
-  </div>
-</main>
+
+<div id="tabBar"></div>
+
+<!-- Controls -->
+<div id="controls">
+  <button onclick="goBack()">&#8592;</button>
+  <button onclick="goForward()">&#8594;</button>
+  <button onclick="reloadTab()">&#10227;</button>
+  <input type="text" id="urlInput" placeholder="Enter search or web address" />
+  <button onclick="openTab()">Go</button>
+  <input type="text" id="searchInput" placeholder="Search DuckDuckGo" />
+  <button onclick="searchDuckDuckGo()">Search</button>
+  <button id="openBlankBtn" onclick="openInBlank()">Open in About:Blank</button>
+</div>
+
+<div id="main"></div>
 
 <script>
-// 🚀 Your deployed Node proxy base URL here — replace with your own!
-// Example: 'https://your-proxy-domain.com/proxy?url='
-const proxyBase = 'https://1e4824c8-bc8e-4dd7-bf21-6590c25d32cd-00-2xkizzub3a75t.kirk.replit.dev/';
+// ✨ Your deployed Node proxy base URL here! Replace with your proxy's URL:
+const proxyBase = 'https://proxy-6zpzod01p-slimmervessels-projects.vercel.app';
 
-async function openProxyTab(url, customTitle="Proxy Viewer", faviconUrl="") {
-  if(!url) return alert("Please enter a URL.");
-  if(!/^https?:\/\//i.test(url)) url="https://"+url;
+let tabs = [];
+let activeTab = null;
 
-  const newWindow = window.open("about:blank","_blank");
-  if(!newWindow) return alert("Popup blocked. Please allow popups.");
+function createTab(title, url) {
+  const tabBar = document.getElementById('tabBar');
+  const main = document.getElementById('main');
+  const tabId = 'tab-' + tabs.length;
 
-  const faviconTag = faviconUrl ? `<link rel="icon" href="${faviconUrl}">` : "";
+  const btn = document.createElement('button');
+  btn.className = 'tabButton';
+  btn.innerHTML = title + ' <span class="closeBtn" onclick="closeTab(event,\'' + tabId + '\')">&times;</span>';
+  btn.onclick = () => switchTab(tabId);
+  tabBar.appendChild(btn);
 
-  // Construct proxied URL to load
+  const iframe = document.createElement('iframe');
+  iframe.id = tabId;
+  main.appendChild(iframe);
+
+  // Load via proxy URL (iframe src set to proxied URL)
   const proxiedUrl = proxyBase + encodeURIComponent(url);
+  iframe.src = proxiedUrl;
+  iframe.onload = () => iframe.style.display = 'block';
+  iframe.onerror = () => {
+    iframe.style.display = 'none';
+    alert('Failed to load ' + url + ' via proxy.');
+  };
 
-  newWindow.document.open();
-  newWindow.document.write(`
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <title>${customTitle}</title>
-    ${faviconTag}
-    <style>
-      body, html { margin:0; padding:0; height:100%; background:black; color:white; display:flex; flex-direction:column; }
-      #loading { text-align:center; padding:20px; font-size:20px; }
-      iframe { border:0; flex:1; width:100%; height:100%; }
-    </style>
-  </head>
-  <body>
-    <div id="loading">Loading ${url} via proxy...</div>
-    <iframe id="proxyFrame" src="${proxiedUrl}" onload="document.getElementById('loading').style.display='none'"></iframe>
-  </body>
-  </html>
-  `);
-  newWindow.document.close();
+  tabs.push({ id: tabId, button: btn, iframe: iframe, url: url });
+  switchTab(tabId);
 }
 
-function openInNewTab() {
-  const url=document.getElementById('urlInput').value.trim();
-  const title=document.getElementById('titleInput').value.trim()||"Proxy Viewer";
-  const favicon=document.getElementById('faviconInput').value.trim();
-  openProxyTab(url,title,favicon);
+function switchTab(id) {
+  tabs.forEach(tab => {
+    tab.iframe.style.display = 'none';
+    tab.button.classList.remove('active');
+    if (tab.id === id) {
+      tab.iframe.style.display = 'block';
+      tab.button.classList.add('active');
+      activeTab = tab;
+    }
+  });
 }
 
-function openGitHubSite() {
-  const url=document.getElementById('ghInput').value.trim();
-  if(!url) return alert("Enter a GitHub Pages site URL.");
-  openProxyTab(url,"GitHub Proxy","");
+function closeTab(e, id) {
+  e.stopPropagation();
+  const tab = tabs.find(t => t.id === id);
+  if (!tab) return;
+  tab.iframe.remove();
+  tab.button.remove();
+  tabs = tabs.filter(t => t.id !== id);
+  if (activeTab && activeTab.id === id) {
+    if (tabs.length) switchTab(tabs[tabs.length - 1].id);
+    else activeTab = null;
+  }
 }
 
-document.getElementById('urlInput').addEventListener('keypress', e=>{
-  if(e.key==='Enter') openInNewTab();
+function openTab() {
+  let url = document.getElementById('urlInput').value.trim();
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  createTab(url, url);
+}
+
+function searchDuckDuckGo() {
+  let query = document.getElementById('searchInput').value.trim();
+  if (!query) return;
+  let url = 'https://duckduckgo.com/?q=' + encodeURIComponent(query);
+  createTab('DuckDuckGo: ' + query, url);
+}
+
+function openInBlank() {
+  if (!activeTab) return alert('No active tab!');
+
+  // Fetch the proxied URL content and open in new window
+  fetch(proxyBase + encodeURIComponent(activeTab.url))
+    .then(res => res.text())
+    .then(html => {
+      const newWindow = window.open();
+      newWindow.document.write(html);
+      newWindow.document.close();
+    })
+    .catch(() => {
+      alert('Failed to load content in about:blank');
+    });
+}
+
+// Navigation buttons
+function goBack() {
+  if (activeTab && activeTab.iframe.contentWindow) activeTab.iframe.contentWindow.history.back();
+}
+function goForward() {
+  if (activeTab && activeTab.iframe.contentWindow) activeTab.iframe.contentWindow.history.forward();
+}
+function reloadTab() {
+  if (activeTab) {
+    // Reload via proxy URL
+    const proxiedUrl = proxyBase + encodeURIComponent(activeTab.url);
+    activeTab.iframe.src = proxiedUrl;
+  }
+}
+
+// Enter key support
+document.getElementById('urlInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') openTab();
+});
+document.getElementById('searchInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') searchDuckDuckGo();
 });
 </script>
+
 </body>
 </html>
-
