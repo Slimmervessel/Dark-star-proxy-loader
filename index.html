@@ -80,13 +80,69 @@
   </main>
 
   <script>
-    async function openProxyTab(url, customTitle = "Proxy Viewer", faviconUrl = "") {
-      if (!url) return alert("Please enter a URL.");
-      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+    async function loadPage(newWindow, url) {
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
 
-      const newWindow = window.open("about:blank", "_blank");
-      if (!newWindow) return alert("Popup blocked. Please allow popups.");
+      const iframe = newWindow.document.getElementById("proxyFrame");
+      const iframeDoc = iframe.contentDocument;
 
+      // Loading screen
+      iframeDoc.open();
+      iframeDoc.write(`<h3 style="color:white; background:black; text-align:center;">Loading ${url}...</h3>`);
+      iframeDoc.close();
+
+      const apiUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error("HTTP error: " + response.status);
+        const data = await response.json();
+
+        const proxyScript = `
+          <script>
+            document.addEventListener("click", function(e) {
+              let a = e.target.closest("a");
+              if (a && a.href) {
+                e.preventDefault();
+                parent.loadPage(window.topProxyWindow, a.href);
+              }
+            });
+          <\/script>
+        `;
+
+        iframeDoc.open();
+        iframeDoc.write(data.contents + proxyScript);
+        iframeDoc.close();
+
+      } catch (err) {
+        iframeDoc.open();
+        iframeDoc.write(`<h2 style="color:red; text-align:center;">Failed to load: ${err.message}</h2>`);
+        iframeDoc.close();
+      }
+    }
+
+    async function openInNewTab() {
+      let url = document.getElementById('urlInput').value.trim();
+      let customTitle = document.getElementById('titleInput').value.trim() || "Proxy Viewer";
+      let faviconUrl = document.getElementById('faviconInput').value.trim();
+
+      if (!url) {
+        alert('Please enter a URL.');
+        return;
+      }
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
+
+      const newWindow = window.open('about:blank', '_blank');
+      if (!newWindow) {
+        alert('Popup blocked. Please allow popups.');
+        return;
+      }
+
+      // Cloaking
       let faviconTag = faviconUrl ? `<link rel="icon" href="${faviconUrl}">` : "";
 
       newWindow.document.open();
@@ -97,46 +153,61 @@
           <title>${customTitle}</title>
           ${faviconTag}
           <style>
-            body, html { margin:0; padding:0; height:100%; background:black; color:white; display:flex; flex-direction:column; }
-            #loading { text-align:center; padding:20px; font-size:20px; }
-            iframe { border:0; flex:1; width:100%; height:100%; display:none; }
+            body, html { margin:0; padding:0; height:100%; background:black; color:white; }
+            iframe { border:0; width:100%; height:100%; }
           </style>
         </head>
         <body>
-          <div id="loading">Loading ${url}...</div>
-          <iframe id="proxyFrame" src="${url}"></iframe>
-
-          <script>
-            const iframe = document.getElementById('proxyFrame');
-            const loading = document.getElementById('loading');
-            iframe.onload = () => {
-              loading.style.display = 'none';
-              iframe.style.display = 'block';
-            };
-          <\/script>
+          <iframe id="proxyFrame"></iframe>
         </body>
         </html>
       `);
       newWindow.document.close();
-    }
 
-    async function openInNewTab() {
-      const url = document.getElementById('urlInput').value.trim();
-      const title = document.getElementById('titleInput').value.trim() || "Proxy Viewer";
-      const favicon = document.getElementById('faviconInput').value.trim();
-      openProxyTab(url, title, favicon);
+      newWindow.topProxyWindow = newWindow;
+      loadPage(newWindow, url);
     }
 
     async function openGitHubSite() {
-      const url = document.getElementById('ghInput').value.trim();
-      if (!url) return alert("Enter a GitHub Pages site URL.");
-      openProxyTab(url, "GitHub Proxy", "");
+      let ghUrl = document.getElementById('ghInput').value.trim();
+      if (!ghUrl) {
+        alert('Enter a GitHub Pages site URL.');
+        return;
+      }
+      if (!/^https?:\/\//i.test(ghUrl)) {
+        ghUrl = 'https://' + ghUrl;
+      }
+
+      const ghWindow = window.open('about:blank', '_blank');
+      if (!ghWindow) {
+        alert('Popup blocked. Please allow popups.');
+        return;
+      }
+
+      ghWindow.document.open();
+      ghWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>GitHub Proxy</title>
+          <style>
+            body, html { margin:0; padding:0; height:100%; background:black; color:white; }
+            iframe { border:0; width:100%; height:100%; }
+          </style>
+        </head>
+        <body>
+          <iframe src="${ghUrl}"></iframe>
+        </body>
+        </html>
+      `);
+      ghWindow.document.close();
     }
 
-    // Quick open on Enter key
-    document.getElementById('urlInput').addEventListener('keypress', e => {
+    // Enter key = quick open
+    document.getElementById('urlInput').addEventListener('keypress', function (e) {
       if (e.key === 'Enter') openInNewTab();
     });
   </script>
 </body>
 </html>
+
