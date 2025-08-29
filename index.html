@@ -17,7 +17,7 @@
       max-width: 1200px;
       text-align: center;
     }
-    #urlInput {
+    #urlInput, #titleInput, #faviconInput, #ghInput {
       width: 50%;
       padding: 10px 20px;
       border-radius: 30px;
@@ -28,11 +28,12 @@
       box-shadow: inset 0 0 8px #444;
       outline: none;
       transition: box-shadow 0.3s ease, background-color 0.3s ease;
+      margin: 8px 0;
     }
-    #urlInput::placeholder {
+    #urlInput::placeholder, #titleInput::placeholder, #faviconInput::placeholder, #ghInput::placeholder {
       color: #888;
     }
-    #urlInput:focus {
+    #urlInput:focus, #titleInput:focus, #faviconInput:focus, #ghInput:focus {
       box-shadow: inset 0 0 12px #6a5acd;
       background-color: #111;
     }
@@ -44,11 +45,23 @@
       color: white;
       font-weight: bold;
       cursor: pointer;
-      margin-left: 10px;
+      margin: 8px;
       transition: background-color 0.3s ease;
     }
     button:hover {
       background-color: #5848c2;
+    }
+    .settings {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #333;
+      border-radius: 12px;
+      background: #111;
+      box-shadow: 0 0 12px #222;
+    }
+    h2 {
+      margin: 0 0 10px;
+      color: #6a5acd;
     }
   </style>
 </head>
@@ -56,6 +69,14 @@
   <main>
     <input type="text" id="urlInput" placeholder="Enter website URL" />
     <button onclick="openInNewTab()">Open in New Tab</button>
+
+    <div class="settings">
+      <h2>Settings</h2>
+      <input type="text" id="titleInput" placeholder="Custom Tab Title (cloak)" />
+      <input type="text" id="faviconInput" placeholder="Favicon URL (cloak)" />
+      <input type="text" id="ghInput" placeholder="Enter GitHub Pages site (ex: https://username.github.io)" />
+      <button onclick="openGitHubSite()">Open GitHub in About:Blank</button>
+    </div>
   </main>
 
   <script>
@@ -67,7 +88,7 @@
       const iframe = newWindow.document.getElementById("proxyFrame");
       const iframeDoc = iframe.contentDocument;
 
-      // Show loading
+      // Loading screen
       iframeDoc.open();
       iframeDoc.write(`<h3 style="color:white; background:black; text-align:center;">Loading ${url}...</h3>`);
       iframeDoc.close();
@@ -79,10 +100,8 @@
         if (!response.ok) throw new Error("HTTP error: " + response.status);
         const data = await response.json();
 
-        // Inject proxy script AFTER site HTML
         const proxyScript = `
           <script>
-            // Use event delegation for ALL clicks (covers new dynamic links too)
             document.addEventListener("click", function(e) {
               let a = e.target.closest("a");
               if (a && a.href) {
@@ -90,48 +109,6 @@
                 parent.loadPage(window.topProxyWindow, a.href);
               }
             });
-
-            // Intercept forms
-            document.addEventListener("submit", function(e) {
-              let f = e.target;
-              if (f.action) {
-                e.preventDefault();
-                parent.loadPage(window.topProxyWindow, f.action);
-              }
-            });
-
-            // Override window.location
-            Object.defineProperty(window, 'location', {
-              set: (url) => parent.loadPage(window.topProxyWindow, url),
-              get: () => ({ href: '' })
-            });
-
-            // Override history API
-            const pushState = history.pushState;
-            history.pushState = function(state, title, url) {
-              parent.loadPage(window.topProxyWindow, url);
-              return pushState.apply(this, arguments);
-            };
-
-            // Proxy fetch
-            const origFetch = window.fetch;
-            window.fetch = function(resource, options) {
-              let fullUrl = (typeof resource === 'string') ? resource : resource.url;
-              let proxied = "https://api.allorigins.win/raw?url=" + encodeURIComponent(fullUrl);
-              return origFetch(proxied, options);
-            };
-
-            // Proxy XMLHttpRequest
-            const OrigXHR = window.XMLHttpRequest;
-            window.XMLHttpRequest = function() {
-              const xhr = new OrigXHR();
-              const open = xhr.open;
-              xhr.open = function(method, url, async, user, pass) {
-                let proxied = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
-                return open.call(this, method, proxied, async, user, pass);
-              };
-              return xhr;
-            };
           <\/script>
         `;
 
@@ -148,6 +125,9 @@
 
     async function openInNewTab() {
       let url = document.getElementById('urlInput').value.trim();
+      let customTitle = document.getElementById('titleInput').value.trim() || "Proxy Viewer";
+      let faviconUrl = document.getElementById('faviconInput').value.trim();
+
       if (!url) {
         alert('Please enter a URL.');
         return;
@@ -162,12 +142,16 @@
         return;
       }
 
+      // Cloaking
+      let faviconTag = faviconUrl ? `<link rel="icon" href="${faviconUrl}">` : "";
+
       newWindow.document.open();
       newWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Proxy Viewer</title>
+          <title>${customTitle}</title>
+          ${faviconTag}
           <style>
             body, html { margin:0; padding:0; height:100%; background:black; color:white; }
             iframe { border:0; width:100%; height:100%; }
@@ -184,10 +168,46 @@
       loadPage(newWindow, url);
     }
 
-    // Enter key support
+    async function openGitHubSite() {
+      let ghUrl = document.getElementById('ghInput').value.trim();
+      if (!ghUrl) {
+        alert('Enter a GitHub Pages site URL.');
+        return;
+      }
+      if (!/^https?:\/\//i.test(ghUrl)) {
+        ghUrl = 'https://' + ghUrl;
+      }
+
+      const ghWindow = window.open('about:blank', '_blank');
+      if (!ghWindow) {
+        alert('Popup blocked. Please allow popups.');
+        return;
+      }
+
+      ghWindow.document.open();
+      ghWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>GitHub Proxy</title>
+          <style>
+            body, html { margin:0; padding:0; height:100%; background:black; color:white; }
+            iframe { border:0; width:100%; height:100%; }
+          </style>
+        </head>
+        <body>
+          <iframe src="${ghUrl}"></iframe>
+        </body>
+        </html>
+      `);
+      ghWindow.document.close();
+    }
+
+    // Enter key = quick open
     document.getElementById('urlInput').addEventListener('keypress', function (e) {
       if (e.key === 'Enter') openInNewTab();
     });
   </script>
 </body>
 </html>
+
