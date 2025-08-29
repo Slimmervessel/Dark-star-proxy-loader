@@ -17,7 +17,7 @@
       max-width: 1200px;
       text-align: center;
     }
-    input {
+    #urlInput, #titleInput, #faviconInput, #ghInput {
       width: 50%;
       padding: 10px 20px;
       border-radius: 30px;
@@ -30,10 +30,10 @@
       transition: box-shadow 0.3s ease, background-color 0.3s ease;
       margin: 8px 0;
     }
-    input::placeholder {
+    #urlInput::placeholder, #titleInput::placeholder, #faviconInput::placeholder, #ghInput::placeholder {
       color: #888;
     }
-    input:focus {
+    #urlInput:focus, #titleInput:focus, #faviconInput:focus, #ghInput:focus {
       box-shadow: inset 0 0 12px #6a5acd;
       background-color: #111;
     }
@@ -72,107 +72,56 @@
 
     <div class="settings">
       <h2>Settings</h2>
-      <input type="text" id="titleInput" placeholder="Custom Tab Title" />
-      <input type="text" id="faviconInput" placeholder="Favicon URL" />
-      <button onclick="applyCloak()">Apply Cloak</button>
-      <br>
-      <input type="text" id="ghInput" placeholder="GitHub Pages site URL" />
+      <input type="text" id="titleInput" placeholder="Custom Tab Title (cloak)" />
+      <input type="text" id="faviconInput" placeholder="Favicon URL (cloak)" />
+      <input type="text" id="ghInput" placeholder="Enter GitHub Pages site (ex: https://username.github.io)" />
       <button onclick="openGitHubSite()">Open GitHub in About:Blank</button>
     </div>
   </main>
 
+  <!-- Ultraviolet Core Scripts -->
+  <script src="/uv/uv.bundle.js"></script>
+  <script src="/uv/uv.config.js"></script>
+
   <script>
-    let cloakTitle = "Proxy Viewer";
-    let cloakFavicon = "";
-
-    function applyCloak() {
-      cloakTitle = document.getElementById("titleInput").value.trim() || "Proxy Viewer";
-      cloakFavicon = document.getElementById("faviconInput").value.trim();
-      alert("Cloak settings applied!");
+    // Register UV Service Worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/uv/uv.sw.js", { scope: "/service/" })
+        .then(() => console.log("✅ Ultraviolet Service Worker registered"))
+        .catch(err => console.error("❌ SW failed:", err));
     }
 
-    async function loadPage(newWindow, url) {
-      if (!/^https?:\/\//i.test(url)) {
-        url = "https://" + url;
-      }
-
-      const iframe = newWindow.document.getElementById("proxyFrame");
-      const iframeDoc = iframe.contentDocument;
-
-      iframeDoc.open();
-      iframeDoc.write(`<h3 style="color:white; background:black; text-align:center;">Loading ${url}...</h3>`);
-      iframeDoc.close();
-
-      const apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
-
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error("HTTP error: " + response.status);
-        const data = await response.json();
-
-        const proxyScript = `
-          <script>
-            // Proxy all link clicks
-            document.addEventListener("click", function(e) {
-              let a = e.target.closest("a");
-              if (a && a.href) {
-                e.preventDefault();
-                parent.loadPage(window.topProxyWindow, a.href);
-              }
-            });
-
-            // Proxy form submits
-            document.addEventListener("submit", function(e) {
-              let f = e.target;
-              if (f.action) {
-                e.preventDefault();
-                parent.loadPage(window.topProxyWindow, f.action);
-              }
-            });
-
-            // Override window.location
-            Object.defineProperty(window, "location", {
-              set: (url) => parent.loadPage(window.topProxyWindow, url),
-              get: () => ({ href: "" })
-            });
-          <\\/script>
-        `;
-
-        iframeDoc.open();
-        iframeDoc.write(data.contents + proxyScript);
-        iframeDoc.close();
-
-      } catch (err) {
-        iframeDoc.open();
-        iframeDoc.write(`<h2 style="color:red; text-align:center;">Failed to load: ${err.message}</h2>`);
-        iframeDoc.close();
-      }
+    // Encode with UV
+    function encodeUV(url) {
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+      return __uv$config.prefix + __uv$config.encodeUrl(url);
     }
 
-    async function openInNewTab() {
-      let url = document.getElementById("urlInput").value.trim();
+    // Open proxied site in new tab
+    function openInNewTab() {
+      let url = document.getElementById('urlInput').value.trim();
+      let customTitle = document.getElementById('titleInput').value.trim() || "Proxy Viewer";
+      let faviconUrl = document.getElementById('faviconInput').value.trim();
+
       if (!url) {
-        alert("Please enter a URL.");
+        alert('Please enter a URL.');
         return;
       }
-      if (!/^https?:\/\//i.test(url)) {
-        url = "https://" + url;
-      }
 
-      const newWindow = window.open("about:blank", "_blank");
+      const newWindow = window.open('about:blank', '_blank');
       if (!newWindow) {
-        alert("Popup blocked. Please allow popups.");
+        alert('Popup blocked. Please allow popups.');
         return;
       }
 
-      let faviconTag = cloakFavicon ? `<link rel="icon" href="${cloakFavicon}">` : "";
+      let faviconTag = faviconUrl ? `<link rel="icon" href="${faviconUrl}">` : "";
 
       newWindow.document.open();
       newWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
-          <title>${cloakTitle}</title>
+          <title>${customTitle}</title>
           ${faviconTag}
           <style>
             body, html { margin:0; padding:0; height:100%; background:black; color:white; }
@@ -180,29 +129,27 @@
           </style>
         </head>
         <body>
-          <iframe id="proxyFrame"></iframe>
+          <iframe src="${encodeUV(url)}"></iframe>
         </body>
         </html>
       `);
       newWindow.document.close();
-
-      newWindow.topProxyWindow = newWindow;
-      loadPage(newWindow, url);
     }
 
-    async function openGitHubSite() {
-      let ghUrl = document.getElementById("ghInput").value.trim();
+    // GitHub Pages passthrough
+    function openGitHubSite() {
+      let ghUrl = document.getElementById('ghInput').value.trim();
       if (!ghUrl) {
-        alert("Enter a GitHub Pages site URL.");
+        alert('Enter a GitHub Pages site URL.');
         return;
       }
       if (!/^https?:\/\//i.test(ghUrl)) {
-        ghUrl = "https://" + ghUrl;
+        ghUrl = 'https://' + ghUrl;
       }
 
-      const ghWindow = window.open("about:blank", "_blank");
+      const ghWindow = window.open('about:blank', '_blank');
       if (!ghWindow) {
-        alert("Popup blocked. Please allow popups.");
+        alert('Popup blocked. Please allow popups.');
         return;
       }
 
@@ -218,15 +165,16 @@
           </style>
         </head>
         <body>
-          <iframe src="${ghUrl}"></iframe>
+          <iframe src="${encodeUV(ghUrl)}"></iframe>
         </body>
         </html>
       `);
       ghWindow.document.close();
     }
 
-    document.getElementById("urlInput").addEventListener("keypress", function (e) {
-      if (e.key === "Enter") openInNewTab();
+    // Enter = quick open
+    document.getElementById('urlInput').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') openInNewTab();
     });
   </script>
 </body>
