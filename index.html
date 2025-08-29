@@ -1,213 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dark Star Proxy Browser</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #0d0d0d;
-      color: #eee;
-    }
-    main {
-      margin: 20px auto;
-      max-width: 1200px;
-      text-align: center;
-    }
-    #urlInput, #titleInput, #faviconInput, #ghInput {
-      width: 50%;
-      padding: 10px 20px;
-      border-radius: 30px;
-      border: none;
-      background-color: #222;
-      color: #eee;
-      font-size: 16px;
-      box-shadow: inset 0 0 8px #444;
-      outline: none;
-      transition: box-shadow 0.3s ease, background-color 0.3s ease;
-      margin: 8px 0;
-    }
-    #urlInput::placeholder, #titleInput::placeholder, #faviconInput::placeholder, #ghInput::placeholder {
-      color: #888;
-    }
-    #urlInput:focus, #titleInput:focus, #faviconInput:focus, #ghInput:focus {
-      box-shadow: inset 0 0 12px #6a5acd;
-      background-color: #111;
-    }
-    button {
-      padding: 10px 18px;
-      border-radius: 30px;
-      border: none;
-      background: #6a5acd;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      margin: 8px;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #5848c2;
-    }
-    .settings {
-      margin-top: 20px;
-      padding: 15px;
-      border: 1px solid #333;
-      border-radius: 12px;
-      background: #111;
-      box-shadow: 0 0 12px #222;
-    }
-    h2 {
-      margin: 0 0 10px;
-      color: #6a5acd;
-    }
-  </style>
-</head>
-<body>
-  <main>
-    <input type="text" id="urlInput" placeholder="Enter website URL" />
-    <button onclick="openInNewTab()">Open in New Tab</button>
+import express from 'express';
+import cors from 'cors';
+import http from 'node:http';
+import path from 'node:path';
+import { hostname } from 'node:os';
+import chalk from 'chalk';
+import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
+import { epoxyPath } from '@mercuryworkshop/epoxy-transport';
+import { libcurlPath } from '@mercuryworkshop/libcurl-transport';
+import { baremuxPath } from '@mercuryworkshop/bare-mux/node';
+import { server as wisp } from '@mercuryworkshop/wisp-js/server';
+import routes from './src/routes.js';
 
-    <div class="settings">
-      <h2>Settings</h2>
-      <input type="text" id="titleInput" placeholder="Custom Tab Title (cloak)" />
-      <input type="text" id="faviconInput" placeholder="Favicon URL (cloak)" />
-      <input type="text" id="ghInput" placeholder="Enter GitHub Pages site (ex: https://username.github.io)" />
-      <button onclick="openGitHubSite()">Open GitHub in About:Blank</button>
-    </div>
-  </main>
+const server = http.createServer();
+const app = express();
+const __dirname = process.cwd();
+const PORT = process.env.PORT || 6060;
 
-  <script>
-    async function loadPage(newWindow, url) {
-      if (!/^https?:\/\//i.test(url)) {
-        url = 'https://' + url;
-      }
+app.use(cors());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/epoxy/', express.static(epoxyPath));
+app.use('/@/', express.static(uvPath));
+app.use('/libcurl/', express.static(libcurlPath));
+app.use('/baremux/', express.static(baremuxPath));
 
-      const iframe = newWindow.document.getElementById("proxyFrame");
-      const iframeDoc = iframe.contentDocument;
+app.use('/', routes);
 
-      // Loading screen
-      iframeDoc.open();
-      iframeDoc.write(`<h3 style="color:white; background:black; text-align:center;">Loading ${url}...</h3>`);
-      iframeDoc.close();
+server.on('request', (req, res) => {
+	app(req, res);
+});
 
-      const apiUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+server.on('upgrade', (req, socket, head) => {
+	if (req.url.endsWith('/wisp/')) {
+		wisp.routeRequest(req, socket, head);
+	} else {
+		socket.end();
+	}
+});
 
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error("HTTP error: " + response.status);
-        const data = await response.json();
+server.on('listening', () => {
+	const address = server.address();
+	const theme = chalk.hex('#8F00FF');
+	const host = chalk.hex('0d52bd');
+	console.log(
+		chalk.bold(
+			theme(`
+	███████╗██████╗  █████╗  ██████╗███████╗
+	██╔════╝██╔══██╗██╔══██╗██╔════╝██╔════╝
+	███████╗██████╔╝███████║██║     █████╗  
+	╚════██║██╔═══╝ ██╔══██║██║     ██╔══╝  
+	███████║██║     ██║  ██║╚██████╗███████╗
+	╚══════╝╚═╝     ╚═╝  ╚═╝ ╚═════╝╚══════╝
+											
+	`)
+		)
+	);
+	console.log(
+		`  ${chalk.bold(host('Local System:'))}            http://${address.family === 'IPv6' ? `[${address.address}]` : address.address}${address.port === 80 ? '' : ':' + chalk.bold(address.port)}`
+	);
 
-        const proxyScript = `
-          <script>
-            document.addEventListener("click", function(e) {
-              let a = e.target.closest("a");
-              if (a && a.href) {
-                e.preventDefault();
-                parent.loadPage(window.topProxyWindow, a.href);
-              }
-            });
-          <\/script>
-        `;
+	console.log(
+		`  ${chalk.bold(host('Local System:'))}            http://localhost${address.port === 8080 ? '' : ':' + chalk.bold(address.port)}`
+	);
 
-        iframeDoc.open();
-        iframeDoc.write(data.contents + proxyScript);
-        iframeDoc.close();
+	try {
+		console.log(
+			`  ${chalk.bold(host('On Your Network:'))}  http://${hostname()}${address.port === 8080 ? '' : ':' + chalk.bold(address.port)}`
+		);
+	} catch (err) {
+		// can't find LAN interface
+	}
 
-      } catch (err) {
-        iframeDoc.open();
-        iframeDoc.write(`<h2 style="color:red; text-align:center;">Failed to load: ${err.message}</h2>`);
-        iframeDoc.close();
-      }
-    }
+	if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+		console.log(
+			`  ${chalk.bold(host('Replit:'))}           https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+		);
+	}
 
-    async function openInNewTab() {
-      let url = document.getElementById('urlInput').value.trim();
-      let customTitle = document.getElementById('titleInput').value.trim() || "Proxy Viewer";
-      let faviconUrl = document.getElementById('faviconInput').value.trim();
+	if (process.env.HOSTNAME && process.env.GITPOD_WORKSPACE_CLUSTER_HOST) {
+		console.log(
+			`  ${chalk.bold(host('Gitpod:'))}           https://${PORT}-${process.env.HOSTNAME}.${process.env.GITPOD_WORKSPACE_CLUSTER_HOST}`
+		);
+	}
 
-      if (!url) {
-        alert('Please enter a URL.');
-        return;
-      }
-      if (!/^https?:\/\//i.test(url)) {
-        url = 'https://' + url;
-      }
+	if (
+		process.env.CODESPACE_NAME &&
+		process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
+	) {
+		console.log(
+			`  ${chalk.bold(host('Github Codespaces:'))}           https://${process.env.CODESPACE_NAME}-${address.port === 80 ? '' : address.port}.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`
+		);
+	}
+});
 
-      const newWindow = window.open('about:blank', '_blank');
-      if (!newWindow) {
-        alert('Popup blocked. Please allow popups.');
-        return;
-      }
-
-      // Cloaking
-      let faviconTag = faviconUrl ? `<link rel="icon" href="${faviconUrl}">` : "";
-
-      newWindow.document.open();
-      newWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>${customTitle}</title>
-          ${faviconTag}
-          <style>
-            body, html { margin:0; padding:0; height:100%; background:black; color:white; }
-            iframe { border:0; width:100%; height:100%; }
-          </style>
-        </head>
-        <body>
-          <iframe id="proxyFrame"></iframe>
-        </body>
-        </html>
-      `);
-      newWindow.document.close();
-
-      newWindow.topProxyWindow = newWindow;
-      loadPage(newWindow, url);
-    }
-
-    async function openGitHubSite() {
-      let ghUrl = document.getElementById('ghInput').value.trim();
-      if (!ghUrl) {
-        alert('Enter a GitHub Pages site URL.');
-        return;
-      }
-      if (!/^https?:\/\//i.test(ghUrl)) {
-        ghUrl = 'https://' + ghUrl;
-      }
-
-      const ghWindow = window.open('about:blank', '_blank');
-      if (!ghWindow) {
-        alert('Popup blocked. Please allow popups.');
-        return;
-      }
-
-      ghWindow.document.open();
-      ghWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>GitHub Proxy</title>
-          <style>
-            body, html { margin:0; padding:0; height:100%; background:black; color:white; }
-            iframe { border:0; width:100%; height:100%; }
-          </style>
-        </head>
-        <body>
-          <iframe src="${ghUrl}"></iframe>
-        </body>
-        </html>
-      `);
-      ghWindow.document.close();
-    }
-
-    // Enter key = quick open
-    document.getElementById('urlInput').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') openInNewTab();
-    });
-  </script>
-</body>
-</html>
-
+server.listen(PORT);
